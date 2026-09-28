@@ -473,7 +473,12 @@ async function enviar(op, conf) {
       body: JSON.stringify(Object.assign({}, op, { clave: c.clave })),
       signal: ctrl.signal
     });
-    try { return await res.json(); } catch (e) { return { ok: false, error: 'respuesta inválida' }; }
+    const txt = await res.text();
+    try { return JSON.parse(txt); } catch (e) {
+      const limpio = txt.replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<script[\s\S]*?<\/script>/gi, ' ')
+        .replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 220);
+      return { ok: false, error: 'respuesta inválida', detalle: 'Código ' + res.status + '. Google dijo: ' + (limpio || '(vacío)') };
+    }
   } finally { clearTimeout(t); }
 }
 
@@ -497,7 +502,7 @@ async function vaciarCola() {
         if (!errorMostrado) {
           errorMostrado = true;
           if (r && r.error === 'no autorizado') { toast('La clave no coincide. Revísala en ajustes', null, 4000); abrirConfig(true); }
-          else toast('No se pudo enviar (' + ((r && r.error) || 'error') + '). Se reintentará', null, 4000);
+          else toast('No se pudo enviar (' + ((r && r.detalle) || (r && r.error) || 'error') + '). Se reintentará', null, 6000);
         }
         break;
       }
@@ -588,7 +593,7 @@ $('cfgGuardar').addEventListener('click', async function () {
     } else if (r && r.error === 'no autorizado') {
       err('La clave no coincide. Cópiala de nuevo desde el registro de ejecución.');
     } else {
-      err('El puente respondió con un error: ' + ((r && r.error) || 'desconocido') + '. Revisa que la implementación sea "Cualquier persona".');
+      err('El puente respondió con un error: ' + ((r && r.error) || 'desconocido') + '. ' + ((r && r.detalle) || ''));
     }
   } catch (e) {
     err('No se pudo conectar. Revisa la URL y tu conexión.');

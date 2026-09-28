@@ -1,6 +1,6 @@
 // Service worker: guarda los archivos de la app para abrirla sin señal.
 // Si cambias index.html en el futuro, sube el número de versión para forzar la actualización.
-const CACHE = 'gastos-v1';
+const CACHE = 'gastos-v2';
 const ARCHIVOS = [
   './',
   './index.html',
